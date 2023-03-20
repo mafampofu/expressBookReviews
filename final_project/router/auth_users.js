@@ -5,8 +5,7 @@ const regd_users = express.Router();
 
 let users = [];
 
-const isValid = (username)=>{ //returns boolean
-//write code to check is the username is valid
+const isValid = (username)=>{ 
 }
 
 const authenticatedUser = (username,password)=>{ //returns boolean
@@ -48,34 +47,39 @@ regd_users.post("/login", (req,res) => {
   }
 });
 // Add a book review
-regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-    const isbn = req.params.isbn;
-    const review = req.query.review;
-    const user = req.session.authorization["username"];
-
-    books[isbn]["reviews"][user] =review;
+regd_users.put("/auth/review/:isbn", (req, res) => {  
+    const { isbn } = req.params;
+    const { review } = req.body;
+    const { username } = req.session.authorization;
     
-    res.send("The new review for book with ISBN" + isbn + " has been added/updated :" + review)
+    const book = books[isbn];
+  
     if (book) {
+      if (book.reviews[username]) {
         book.reviews[username] = review;
-        return res.status(200).json(book);
+        return res.json({ message: `Review successfully updated.` })
+      }
+      
+      book.reviews[username] = review;
+      return res.json({ message: `Book Review with '${isbn}' successfully posted.` })
     }
-    return res.status(404).json({ message: "Invalid ISBN" });
-});
-
-// delete book review
-regd_users.delete("/auth/review/:isbn", (req, res)=>{
-    const isbn = req.params.isbn;
-    const user = req.session.authorization["username"];
-    delete books[isbn]["reviews"][user];
-  if (book) {
+    return res.status(403).json({ message: `Book with isbn '${isbn}' could not be found.` })
+  });
+  // delete a book review 
+  regd_users.delete("/auth/review/:isbn", (req, res) => {
+    const { isbn } = req.params;
+    const { username } = req.session.authorization;
+    
+    const book = books[isbn];
+  
+    if (book) {
+      if (book.reviews[username])
         delete book.reviews[username];
-        return res.status(200).json(book);
+      
+      return res.json({ message: `Book Review with '${isbn}' successfully deleted.` })
     }
-    return res.status(404).json({ message: "Invalid ISBN" });
-    res.send("delete success!" + books[isbn]["reviews"])
-})
+    return res.status(403).json({ message: `Book with ISBN '${isbn}' could not be found.` })
+  });
 
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
